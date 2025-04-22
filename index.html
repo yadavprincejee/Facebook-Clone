@@ -1,348 +1,522 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght
-    @100;200;300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font
-    -awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdY
-    TDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHU
-    SCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script src="https://kit.fontawesome.com/c451d80140.js" crossorigin="
-    anonymous"></script>
-    <title>Facebook</title>
-</head>
-<body>
-            
-    <nav>
-        <div class="nav_left">
-            <img src="images/logo.png" alt="Logo" class="logo">
-            <ul>
-                <li><img src="images/notification.png" alt="notification"></li>
-                <li><img src="images/inbox.png" alt="inbox"></li>
-                <li><img src="images/video.png" alt="video"></li>
-            </ul>
-        </div>
-        <div class="nav_right">
-            <div class="search_box">
-                <img src="images/search.png" alt="search">
-                <input type="search" placeholder="Search">
-            </div>
-            <div class="nav_user_icon online_icon" onclick="settingsMenuToggle()">
-                <img src="images/profile-pic.png" alt="profile">
-            </div>
-        </div>
-        <!-- todo: setting menu -->
-        <div class="setting_menu">
-            
-            <div id="dark_btn" class="dark_btn_on">
-                <span></span>
-            </div>
+/**
+ * FACEBOOK CLONE - COMPLETE CODE
+ * 
+ * This file contains all the essential components and functionality
+ * for a Facebook-like social media platform including:
+ * - Main page with news feed
+ * - Navigation bar
+ * - Post component with likes and comments
+ * - Post creation form
+ * - API routes for data handling
+ */
 
-            <div class="settings_menu_inner">
-                <div class="user_profile">
-                    <img src="images/profile-pic.png" alt="Pro We Are Pro You Now">
-                    <div>
-                        <p>Kashan Adnan</p>
-                        <a href="./user.html">See Your Profile</a>
-                    </div>
-                </div>
-                <hr />
-                <div class="user_profile">
-                    <img src="images/feedback.png" alt="">
-                    <div>
-                        <p>Give Feedback</p>
-                        <a href="#">Help Us To improve  new design</a>
-                    </div>
-                </div>
-                <hr />
-                <div class="setting_link">
-                    <img src="images/setting.png" class="setting_icon" alt="">
-                    <a href="#">Setting & Privacy <img src="images/arrow.png" alt="" width="10px"></a>
-                </div>
-                <div class="setting_link">
-                    <img src="images/help.png" class="setting_icon" alt="">
-                    <a href="#">Help & Support <img src="images/arrow.png" alt="" width="10px"></a>
-                </div>
-                <div class="setting_link">
-                    <img src="images/display.png" class="setting_icon" alt="">
-                    <a href="#">Dispaly & Accesiblity <img src="images/arrow.png" alt="" width="10px"></a>
-                </div>
-                <div class="setting_link">
-                    <img src="images/logout.png" class="setting_icon" alt="">
-                    <a href="#">Logout<img src="images/arrow.png" alt="" width="10px"></a>
-                </div>
-            </div>
-        </div>
-    </nav>
+// ==========================================
+// MAIN PAGE (HOME FEED)
+// ==========================================
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
+// Main Home Page Component
+function Home() {
+  const [posts, setPosts] = useState([]);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchFeed = async () => {
+      try {
+        const response = await fetch('/api/feed');
+        const data = await response.json();
+        
+        if (response.ok) {
+          setPosts(data.posts);
+          
+          // If we have a current user ID, fetch user details
+          if (data.currentUserId) {
+            const userResponse = await fetch(`/api/users/${data.currentUserId}`);
+            const userData = await userResponse.json();
+            
+            if (userResponse.ok) {
+              setUser(userData.user);
+            }
+          }
+        } else {
+          setError(data.message || 'Failed to load feed');
+        }
+      } catch (err) {
+        setError('An error occurred while loading the feed');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    <div class="container">
-        <!-- todo: Left SIdeBar Start -->
-        <div class="left_sidebar">
-            <div class="important_link">
-                <a href="#"><img src="images/news.png" alt="news">Latest News</a>
-                <a href="#"><img src="images/friends.png" alt="Freinds">Freinds</a>
-                <a href="#"><img src="images/group.png" alt="Group">Group</a>
-                <a href="#"><img src="images/marketplace.png" alt="MarketpLace">MarketpLace</a>
-                <a href="#"><img src="images/watch.png" alt="Watch">Watch</a>
-                <a href="#">See More</a>
+    fetchFeed();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <Navbar user={user} />
+      
+      <div className="pt-20 pb-10">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          {user && (
+            <PostForm userId={user.id} username={user.username} />
+          )}
+          
+          {loading ? (
+            <div className="text-center py-10">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+              <p className="mt-2 text-gray-600">Loading feed...</p>
             </div>
-            <div class="shortcut_links">
-                <p>Your Shortcut</p>
-                <a href=""><img src="images/shortcut-1.png">Web Devolopers</a>
-                <a href=""><img src="images/shortcut-2.png">Web Design</a>
-                <a href=""><img src="images/shortcut-3.png">Graphic Desing</a>
-                <a href=""><img src="images/shortcut-4.png">Front End Devloper</a>
+          ) : error ? (
+            <div className="bg-red-100 p-4 rounded-md text-red-700 mt-6">
+              {error}
             </div>
+          ) : posts.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-6 text-center mt-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">Welcome to Facebook Clone!</h2>
+              <p className="text-gray-600">
+                {user 
+                  ? "Your feed is empty. Start by creating a post or finding friends!"
+                  : "Please log in to see your personalized feed and interact with posts."}
+              </p>
+              {!user && (
+                <div className="mt-4">
+                  <a href="/login" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    Log in
+                  </a>
+                  <span className="mx-2 text-gray-500">or</span>
+                  <a href="/register" className="inline-block px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                    Sign up
+                  </a>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4 mt-6">
+              {posts.map((post) => (
+                <Post key={post.id} post={post} currentUserId={user?.id} />
+              ))}
+            </div>
+          )}
         </div>
-        <!-- todo: Left SIdeBar End -->
+      </div>
+    </div>
+  );
+}
 
-        <!-- todo: Main Content Start -->
-        <div class="main_content">
-            <div class="story_gallery">
-                <div class="story story1">
-                    <img src="images/upload.png" alt="Uploading Photo">
-                    <p>Post Story</p>
-                </div>
-                <div class="story  story2">
-                    <img src="images/member-1.png" alt="Uploading Photo">
-                    <p>Kashan Adnan</p>
-                </div>
-                <div class="story story3">
-                    <img src="images/member-2.png" alt="Uploading Photo">
-                    <p>Izhan Farhan</p>
-                </div>
-                <div class="story story4">
-                    <img src="images/member-3.png" alt="Uploading Photo">
-                    <p>Kamran Sheik</p>
-                </div>
-                <div class="story story5">
-                    <img src="images/member-4.png" alt="Uploading Photo">
-                    <p>Sameer Khan</p>
-                </div>
+// ==========================================
+// NAVIGATION BAR COMPONENT
+// ==========================================
+function Navbar({ user }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  return (
+    <nav className="bg-white shadow-md fixed top-0 left-0 right-0 z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <Link href="/" className="text-blue-600 text-2xl font-bold">
+                facebook
+              </Link>
             </div>
-            <div class="post_container">
-                <div class="user_profile">
-                    <img src="images/profile-pic.png" alt="Pro We Are Pro You Now">
-                    <div>
-                        <p>Kashan Adnan</p>
-                        <small>Public <i class="fa fa-caret-down"></i></small>
-                    </div>
-                </div>
-                <div class="post_input_container">
-                    <input id="input_vlaue" placeholder="What's on Your Mind"/>
-                    <button id="button_value">Post</button>
-                    <div class="add_post_link">
-                        <a href="#"><img src="images/live-video.png" alt="Its Video Time">Live Video</a>
-                        <a href="#"><img src="images/photo.png" alt="Its Video Time">Photo/Video</a>
-                        <a href="#"><img src="images/feeling.png" alt="Its Video Time">Feeling/Activity</a>
-                    </div>
-                </div>
-            </div>
-            <div id="post">
-                Post
-            </div>
-            <div class="post_container">
-                <div class="post_row">
-                    <div class="user_profile">
-                        <img src="images/profile-pic.png" alt="Pro We Are Pro You Now">
-                        <div>
-                            <p>Kashan Adnan</p>
-                            <span>Sep 9 2022 , 12:50 Am</span>
-                        </div>
-                    </div>
-                    <a href=""><i class="fa fa-ellipsis-v"></i></a>
-                </div>
-                <p class="post_text">Subscribe <span> @Kashan Adnan </span>Youtube channel to Watch More VIdeos Website Devolopment And UI Design 
-                    <a href="#">#KashanAdnan</a><a href="#">#YoutubeChannel</a>
-                </p>
-                <img src="images/feed-image-1.png" alt="Feedback" class="post_img">
-                <div class="post_row">
-                    <div class="activity_icon">
-                        <div><img src="images/like-blue.png" alt="Like Kardo">120</div>
-                        <div><img src="images/comments.png" alt="Like Kardo">65</div>
-                        <div><img src="images/share.png" alt="Like Kardo">130</div>
-                    </div>
-                    <div class="post_profile_icon">
-                        <img src="images/profile-pic.png" alt="Profile Pic"> <i class="fa fa-caret-down"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="post_container">
-                <div class="post_row">
-                    <div class="user_profile">
-                        <img src="images/profile-pic.png" alt="Pro We Are Pro You Now">
-                        <div>
-                            <p>Izhan Farhan</p>
-                            <span>Sep 9 2022 , 11:09 Am</span>
-                        </div>
-                    </div>
-                    <a href=""><i class="fa fa-ellipsis-v"></i></a>
-                </div>
-                <p class="post_text">Subscribe <span> @Izhan Farhan </span>Youtube channel to Watch More Videos Graphic desing And UI Design 
-                    <a href="#">#Izhan Farhan</a><a href="#">#YoutubeChannel</a>
-                </p>
-                <img src="images/feed-image-2.png" alt="Feedback" class="post_img">
-                <div class="post_row">
-                    <div class="activity_icon">
-                        <div><img src="images/like-blue.png" alt="Like Kardo">290</div>
-                        <div><img src="images/comments.png" alt="Like Kardo">98</div>
-                        <div><img src="images/share.png" alt="Like Kardo">9834</div>
-                    </div>
-                    <div class="post_profile_icon">
-                        <img src="images/profile-pic.png" alt="Profile Pic"> <i class="fa fa-caret-down"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="post_container">
-                <div class="post_row">
-                    <div class="user_profile">
-                        <img src="images/profile-pic.png" alt="Pro We Are Pro You Now">
-                        <div>
-                            <p>Kamran Sheikh</p>
-                            <span>Sep 9 2022 , 12:00 Am</span>
-                        </div>
-                    </div>
-                    <a href=""><i class="fa fa-ellipsis-v"></i></a>
-                </div>
-                <p class="post_text">Subscribe <span> @KamranSheikh </span>Youtube channel to Watch More VIdeos Microsoft  And Photo Editing 
-                    <a href="#">#KamranSheikh</a><a href="#">#YoutubeChannel</a>
-                </p>
-                <img src="images/feed-image-3.png" alt="Feedback" class="post_img">
-                <div class="post_row">
-                    <div class="activity_icon">
-                        <div><img src="images/like-blue.png" alt="Like Kardo">880</div>
-                        <div><img src="images/comments.png" alt="Like Kardo">56</div>
-                        <div><img src="images/share.png" alt="Like Kardo">510</div>
-                    </div>
-                    <div class="post_profile_icon">
-                        <img src="images/profile-pic.png" alt="Profile Pic"> <i class="fa fa-caret-down"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="post_container">
-                <div class="post_row">
-                    <div class="user_profile">
-                        <img src="images/profile-pic.png" alt="Pro We Are Pro You Now">
-                        <div>
-                            <p>Kamran Sheikh</p>
-                            <span>Sep 9 2022 , 12:00 Am</span>
-                        </div>
-                    </div>
-                    <a href=""><i class="fa fa-ellipsis-v"></i></a>
-                </div>
-                <p class="post_text">Subscribe <span> @KamranSheikh </span>Youtube channel to Watch More VIdeos Microsoft  And Photo Editing 
-                    <a href="#">#KamranSheikh</a><a href="#">#YoutubeChannel</a>
-                </p>
-                <img src="images/feed-image-4.png" alt="Feedback" class="post_img">
-                <div class="post_row">
-                    <div class="activity_icon">
-                        <div><img src="images/like-blue.png" alt="Like Kardo">880</div>
-                        <div><img src="images/comments.png" alt="Like Kardo">56</div>
-                        <div><img src="images/share.png" alt="Like Kardo">510</div>
-                    </div>
-                    <div class="post_profile_icon">
-                        <img src="images/profile-pic.png" alt="Profile Pic"> <i class="fa fa-caret-down"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="post_container">
-                <div class="post_row">
-                    <div class="user_profile">
-                        <img src="images/profile-pic.png" alt="Pro We Are Pro You Now">
-                        <div>
-                            <p>Kamran Sheikh</p>
-                            <span>Sep 9 2022 , 12:00 Am</span>
-                        </div>
-                    </div>
-                    <a href=""><i class="fa fa-ellipsis-v"></i></a>
-                </div>
-                <p class="post_text">Subscribe <span> @KamranSheikh </span>Youtube channel to Watch More VIdeos Microsoft  And Photo Editing 
-                    <a href="#">#KamranSheikh</a><a href="#">#YoutubeChannel</a>
-                </p>
-                <img src="images/feed-image-5.png" alt="Feedback" class="post_img">
-                <div class="post_row">
-                    <div class="activity_icon">
-                        <div><img src="images/like.png" alt="Like Kardo">880</div>
-                        <div><img src="images/comments.png" alt="Like Kardo">56</div>
-                        <div><img src="images/share.png" alt="Like Kardo">510</div>
-                    </div>
-                    <div class="post_profile_icon">
-                        <img src="images/profile-pic.png" alt="Profile Pic"> <i class="fa fa-caret-down"></i>
-                    </div>
-                </div>
-            </div>
-            <button type="button" class="our_btn">Load More</button>
-                    <footer>
-                            <p>Copyright 2022 - Easy Tutorial  Youtube Channel</p>
-                    </footer>
+          </div>
+          
+          <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">
+            {user ? (
+              <>
+                <Link href={`/profile/${user.username}`} className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                  {user.fullName}
+                </Link>
+                <button 
+                  onClick={() => {
+                    // In a real app, this would call a logout API
+                    document.cookie = 'session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                    window.location.href = '/';
+                  }}
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                  Login
+                </Link>
+                <Link href="/register" className="bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </div>
+          
+          <div className="-mr-2 flex items-center sm:hidden">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+            >
+              <span className="sr-only">Open main menu</span>
+              {mobileMenuOpen ? (
+                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
-        <!-- todo: Main Content End -->
+      </div>
+      
+      {mobileMenuOpen && (
+        <div className="sm:hidden">
+          <div className="pt-2 pb-3 space-y-1">
+            {user ? (
+              <>
+                <Link href={`/profile/${user.username}`} className="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
+                  {user.fullName}
+                </Link>
+                <button 
+                  onClick={() => {
+                    // In a real app, this would call a logout API
+                    document.cookie = 'session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                    window.location.href = '/';
+                  }}
+                  className="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium w-full text-left"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
+                  Login
+                </Link>
+                <Link href="/register" className="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+}
 
-        <!-- todo:  Right SidebarStart -->
-        <div class="right_sidebar">
-            <div class="sider_bar_title">
-                <h4>Events</h4>
-                <a href="#">See All</a>
-            </div>
-            <div class="event">
-                <div class="Left_event">
-                    <h3>18</h3>
-                    <span>March</span>
-                </div>
-                <div class="Right_event">
-                        <h4>Social Media</h4>
-                        <p><i class="fas fa-map-marker-alt"></i> Willson Tech Park</p>
-                        <a href="#">More Info</a>
-                </div>  
-            </div>
-            <div class="event">
-                <div class="Left_event">
-                    <h3>22</h3>
-                    <span>June</span>
-                </div>
-                <div class="Right_event">
-                        <h4>Mobile Marketting</h4>
-                        <p><i class="fas fa-map-marker-alt"></i> Orangi Town Karachi</p>
-                        <a href="#">More Info</a>
-                </div>  
-            </div>
-            <div class="sider_bar_title">
-                <h4>Advertisement</h4>
-                <a href="#">CLose</a>
-            </div>
-            <img src="images/advertisement.png" alt="Advertisement" class="advirsment_side_bar">
-            <div class="sider_bar_title">
-                <h4>Conversation</h4>
-                <a href="#">Hide Chat</a>
-            </div>
-            <div class="online_list">
-                <div class="online_icon">
-                    <img src="images/member-1.png" alt="">
-                </div>
-                <p>Kashan Adnan</p>
-                </div>
-                <div class="online_list">
-                    <div class="online_icon">
-                        <img src="images/member-2.png" alt="">
-                    </div>
-                    <p>Izhan Farhan</p>
-                </div>
-                <div class="online_list">
-                    <div class="online_icon">
-                        <img src="images/member-3.png" alt="">
-                    </div>
-                    <p>Kamran Sheikh</p>
-                </div>
-        <!-- todo: Right  SIdeBar End -->
+// ==========================================
+// POST CREATION FORM COMPONENT
+// ==========================================
+function PostForm({ userId, username }) {
+  const [content, setContent] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!content.trim()) {
+      setError('Post content cannot be empty');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setError('');
+    
+    try {
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          content,
+          imageUrl: imageUrl || null,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create post');
+      }
+      
+      // Clear form
+      setContent('');
+      setImageUrl('');
+      
+      // Refresh feed
+      window.location.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  return (
+    <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <div className="flex items-start space-x-3">
+        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-700">
+          {username.charAt(0).toUpperCase()}
+        </div>
+        <div className="flex-1">
+          <form onSubmit={handleSubmit}>
+            <textarea
+              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              placeholder={`What's on your mind, ${username}?`}
+              rows={3}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+            
+            {imageUrl && (
+              <div className="mt-2 relative">
+                <img 
+                  src={imageUrl} 
+                  alt="Post preview" 
+                  className="max-h-60 rounded-lg object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setImageUrl('')}
+                  className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 rounded-full p-1 text-white"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            
+            {error && (
+              <div className="mt-2 text-red-600 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  className="flex items-center text-gray-500 hover:text-blue-600"
+                  onClick={() => {
+                    // In a real app, this would open a file picker
+                    const url = prompt('Enter image URL:');
+                    if (url) setImageUrl(url);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="ml-1 hidden sm:inline">Photo</span>
+                </button>
+              </div>
+              
+              <button
+                type="submit"
+                disabled={isSubmitting || !content.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Posting...' : 'Post'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
 
+// ==========================================
+// POST COMPONENT WITH LIKES AND COMMENTS
+// ==========================================
+function Post({ post, currentUserId }) {
+  const [likes, setLikes] = useState(post.likes);
+  const [userLiked, setUserLiked] = useState(post.userLiked);
+  const [isLiking, setIsLiking] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
 
-<script src="script.js"></script>
-</body>
-</html>
+  const formattedDate = new Date(post.createdAt).toLocaleString();
+
+  const handleLike = async () => {
+    if (!currentUserId || isLiking) return;
+    
+    setIsLiking(true);
+    
+    try {
+      const action = userLiked ? 'unlike' : 'like';
+      const response = await fetch(`/api/posts/${post.id}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: currentUserId,
+          action,
+        }),
+      });
+      
+      if (response.ok) {
+        setLikes(prev => userLiked ? prev - 1 : prev + 1);
+        setUserLiked(!userLiked);
+      }
+    } catch (error) {
+      console.error('Error liking post:', error);
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const loadComments = async () => {
+    if (!showComments) {
+      setShowComments(true);
+      setIsLoadingComments(true);
+      
+      try {
+        const response = await fetch(`/api/posts/${post.id}/comments`);
+        const data = await response.json();
+        
+        if (response.ok) {
+          setComments(data.comments);
+        }
+      } catch (error) {
+        console.error('Error loading comments:', error);
+      } finally {
+        setIsLoadingComments(false);
+      }
+    } else {
+      setShowComments(false);
+    }
+  };
+
+  const handleComment = async (e) => {
+    e.preventDefault();
+    
+    if (!currentUserId || !commentText.trim()) return;
+    
+    try {
+      const response = await fetch(`/api/posts/${post.id}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: currentUserId,
+          content: commentText,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setComments(prev => [data.comment, ...prev]);
+        setCommentText('');
+      }
+    } catch (error) {
+      console.error('Error posting comment:', error);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow mb-4 overflow-hidden">
+      <div className="p-4">
+        <div className="flex items-center space-x-3">
+          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-700">
+            {post.username.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <Link href={`/profile/${post.username}`} className="font-semibold text-gray-900 hover:underline">
+              {post.fullName}
+            </Link>
+            <p className="text-xs text-gray-500">{formattedDate}</p>
+          </div>
+        </div>
+        
+        <div className="mt-3">
+          <p className="text-gray-800 whitespace-pre-line">{post.content}</p>
+          
+          {post.imageUrl && (
+            <div className="mt-3">
+              <img 
+                src={post.imageUrl} 
+                alt="Post image" 
+                className="rounded-lg max-h-96 w-full object-cover"
+              />
+            </div>
+          )}
+        </div>
+        
+        <div className="mt-3 flex items-center justify-between text-gray-500 text-sm">
+          <div>
+            {likes > 0 && (
+              <span className="flex items-center">
+                <span className="inline-flex justify-center items-center w-5 h-5 bg-blue-100 text-blue-500 rounded-full mr-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                  </svg>
+                </span>
+                {likes}
+              </span>
+            )}
+          </div>
+          
+          <div>
+            {post.comments > 0 && `${post.comments} comments`}
+          </div>
+        </div>
+      </div>
+      
+      <div className="border-t border-gray-200 px-4 py-2">
+        <div className="flex justify-around">
+          <button 
+            onClick={handleLike}
+            disabled={!currentUserId || isLiking}
+            className={`flex items-center justify-center w-full py-2 rounded-md ${
+              userLiked ? 'text-blue-600' : 'text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+            </svg>
+            Like
+          </button>
+          
+          <button 
+            onClick={loadComments}
+            className="flex items-center justify-center w-full py-2 text-gray-500 rounded-md hover:bg-gray-50"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            Comment
+          </button>
+          
+          <button className="flex items-center justify-center w-full py-2 text-gray-500 rounded-md hover:bg-gray-50">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Share
+          </button>
+        </div>
+      </div>
+      
+      {showComments && (
+        <div className="border-t border-gray-200 p-4">
+          {currentUserId && (
+            <form onSubmit={handleComment} className="flex items-start space-x-2 mb-4">
+              <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 flex-shrink-0">
+                {/* User avatar would g
